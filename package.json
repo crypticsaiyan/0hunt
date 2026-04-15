@@ -1,0 +1,25 @@
+{
+  "name": "zero-day-mitigation-engine",
+  "version": "1.0.0",
+  "description": "Autonomous security agent that monitors HackerNews, Twitter, Reddit, and GitHub 24/7 for zero-day vulnerabilities, scores them with a novel Exploit Probability Index (EPI), and delivers structured Slack alerts with PoC links and mitigation steps.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "npx tsx src/index.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "node-fetch": "^2.7.0",
+    "openai": "^6.34.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.6.0",
+    "@types/node-fetch": "^2.6.13",
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.2"
+  }
+}
