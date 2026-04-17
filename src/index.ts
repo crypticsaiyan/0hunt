@@ -5,6 +5,11 @@ import { getThreatIntelFeed, getGithubPoCs, getMitigations, getCommunityIntel, g
 import { triageThreatFeed, generateSecurityBriefing } from "./agent";
 import { hasSeenCVE, markCVESeen } from "./state";
 
+const WATCH_KEYWORDS = (process.env.WATCH_KEYWORDS || "")
+    .split(",").map(k => k.trim().toLowerCase()).filter(Boolean);
+
+const MIN_EPI = parseFloat(process.env.MIN_EPI || "4");
+
 // Exploit Probability Index: base severity + PoC availability + community signal
 function computeEPI(baseScore: number, pocCount: number, hasRedditActivity: boolean): number {
     const pocBonus = pocCount === 0 ? 0 : pocCount === 1 ? 1.5 : 2.5;
@@ -45,6 +50,17 @@ async function mainLoop(): Promise<boolean> {
     let { affectedSoftware } = triage;
     console.log(`[!] Potential zero-day detected: ${cveId} in ${affectedSoftware} (base score: ${baseScore})`);
 
+    // Personalization: skip if not in user's watch list
+    if (WATCH_KEYWORDS.length > 0) {
+        const relevant = WATCH_KEYWORDS.some(k =>
+            affectedSoftware.toLowerCase().includes(k) || cveId.toLowerCase().includes(k)
+        );
+        if (!relevant) {
+            console.log(`[-] ${affectedSoftware} not in WATCH_KEYWORDS — skipping.`);
+            return false;
+        }
+    }
+
     // Deduplication — skip if already alerted
     if (hasSeenCVE(cveId)) {
         console.log(`[-] ${cveId} already processed. Skipping duplicate alert.`);
@@ -80,8 +96,8 @@ async function mainLoop(): Promise<boolean> {
     const severity  = getSeverity(epiScore);
     console.log(`[3/4] EPI Score: ${epiScore.toFixed(1)}/10 → ${severity}`);
 
-    if (epiScore < 4) {
-        console.log(`[-] EPI too low (${epiScore.toFixed(1)}). Not worth alerting.`);
+    if (epiScore < MIN_EPI) {
+        console.log(`[-] EPI ${epiScore.toFixed(1)} below threshold (${MIN_EPI}). Not worth alerting.`);
         markCVESeen(cveId);
         return false;
     }
@@ -120,6 +136,8 @@ async function start() {
     console.log("    Polling interval : 30 minutes");
     console.log("    Intel sources    : HackerNews, GitHub, StackExchange, Wikipedia, Tavily, NVD");
     console.log("    Delivery         : Slack");
+    console.log(`    Watch keywords   : ${WATCH_KEYWORDS.length > 0 ? WATCH_KEYWORDS.join(", ") : "all (no filter)"}`);
+    console.log(`    Min EPI threshold: ${MIN_EPI}`);
 
     const stats: DailyStats = { cyclesRun: 0, threatsFound: 0, cvesSeen: [] };
 

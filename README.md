@@ -1,7 +1,12 @@
 # 0hunt
-### Ohita Hackathon 2026 Submission
 
-An autonomous security agent that monitors the internet 24/7 for zero-day vulnerabilities and delivers structured, actionable Slack alerts — before your team even wakes up.
+![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?style=flat&logo=typescript&logoColor=white)
+![Node.js](https://img.shields.io/badge/Node.js-20+-339933?style=flat&logo=node.js&logoColor=white)
+![Ohita](https://img.shields.io/badge/Ohita-8%20integrations-FF6B35?style=flat)
+![License](https://img.shields.io/badge/license-MIT-green?style=flat)
+![Hackathon](https://img.shields.io/badge/Ohita%20Hackathon-2026-blueviolet?style=flat)
+
+**Autonomous zero-day vulnerability intelligence agent.** Monitors HackerNews, GitHub, StackExchange, Dev.to, Wikipedia, and more every 30 minutes — scores threats with a novel EPI algorithm — delivers structured Slack alerts before your team even wakes up.
 
 ---
 
@@ -23,7 +28,7 @@ Every 30 minutes, the engine runs a full intelligence cycle:
 [3] DEEP DIVE → GitHub (PoCs), StackExchange, HN+Dev.to (community),
                 Wikipedia (scope), Tavily (patch intel), NVD (CVSS) — all parallel
 [4] SCORE     → Compute Exploit Probability Index (EPI)
-[5] ALERT     → Push structured Slack briefing if EPI ≥ 4
+[5] ALERT     → Push structured Slack briefing if EPI ≥ MIN_EPI
 [6] LOG       → Mark CVE as seen to prevent duplicate alerts
 [7] DIGEST    → Daily summary posted to Slack every 24 hours
 ```
@@ -32,20 +37,22 @@ Every 30 minutes, the engine runs a full intelligence cycle:
 
 ## Exploit Probability Index (EPI)
 
-The EPI is a 1–10 composite score that answers: *"How likely is this to be exploited in the wild, right now?"*
+The EPI is a 1–10 composite score that answers: *"How likely is this CVE to be exploited in the wild, right now?"*
 
 | Component | Points |
 |---|---|
 | Base severity (LLM + NVD assessment) | 1–10 |
 | Public PoC found on GitHub | +1.5 (1 repo) / +2.5 (2+ repos) |
-| Community activity (HN/Dev.to) | +0.5 |
+| Community activity (HN / Dev.to) | +0.5 |
 
 **Severity tiers:**
-- `CRITICAL` (EPI ≥ 8.5) → `<!channel>` ping
-- `HIGH` (EPI ≥ 6.5) → Standard alert
-- `MEDIUM` (EPI ≥ 4.0) → Advisory alert
 
-CVEs with EPI < 4 are silently logged and skipped — no noise.
+| EPI | Severity | Slack behavior |
+|---|---|---|
+| ≥ 8.5 | `CRITICAL` | `<!channel>` ping |
+| ≥ 6.5 | `HIGH` | Standard alert |
+| ≥ 4.0 | `MEDIUM` | Advisory alert |
+| < MIN_EPI | — | Silently skipped |
 
 ---
 
@@ -57,10 +64,10 @@ CVEs with EPI < 4 are silently logged and skipped — no noise.
 | **Twitter/X** | Real-time security community chatter |
 | **GitHub** | PoC exploit code discovery |
 | **StackExchange** | Technical workarounds (security.stackexchange.com) |
-| **Dev.to** | Security community articles (filtered by CVE/software) |
-| **Wikipedia** | Impact scope — what is the affected software, who uses it |
+| **Dev.to** | Security community articles filtered by CVE/software |
+| **Wikipedia** | Impact scope — what the software is and who uses it |
 | **Tavily (Search)** | Patch intel — official fix, vendor advisories, patch version |
-| **Slack** | Structured alert delivery |
+| **Slack** | Structured alert delivery with daily digest |
 
 **Total: 8 Ohita integrations**
 
@@ -81,23 +88,33 @@ npm start
 ```
 
 **.env**
-```
+```bash
 OHITA_KEY=your_ohita_api_key
-OPENROUTER_API_KEY=your_openrouter_key    # free models, no cost
+OPENROUTER_API_KEY=your_openrouter_key    # free models — no cost
+
+# Slack (BYOK via Ohita)
 SLACK_TOKEN=xoxb-your-slack-bot-token
 SLACK_CHANNEL_ID=C0XXXXXXXXX
+
+# Personalization (optional)
+WATCH_KEYWORDS=nginx,apache,chrome        # only alert on these — blank = watch everything
+MIN_EPI=4                                 # minimum EPI to trigger alert (1–10)
 ```
 
-The engine uses free LLM models via OpenRouter — no paid AI API required.
-
-To get your Slack token: create a Slack app at api.slack.com with `chat:write` scope, install it to your workspace, and store the `xoxb-` token in Ohita via `POST /v1/credentials/slack`.
+> Uses free LLM models via OpenRouter — no paid AI API required.  
+> To get your Slack token: create an app at [api.slack.com](https://api.slack.com) with `chat:write` scope, then store the `xoxb-` token in Ohita via `POST /v1/credentials/slack`.
 
 ---
 
-## Why 0hunt Wins
+## Personalization
 
-1. **Runs forever** — 30-minute polling loop, crash recovery, daily digest proves it
-2. **8 Ohita integrations** — maximum use of the platform across the full intel pipeline
-3. **Novel scoring** — EPI gives a concrete 1–10 number, not vague labels
-4. **Solves a real problem** — every security and DevOps team faces this gap
-5. **Zero paid dependencies** — free LLMs, free NVD API, free Ohita tier
+0hunt can be scoped to your specific stack:
+
+- **`WATCH_KEYWORDS`** — comma-separated list of software/terms to monitor. Set `nginx,apache,openssl` to only receive alerts affecting your infrastructure. Leave blank to monitor everything.
+- **`MIN_EPI`** — minimum EPI threshold. Set `7` for HIGH+ only. Set `4` (default) for all meaningful threats.
+
+---
+
+## License
+
+[MIT](./LICENSE)

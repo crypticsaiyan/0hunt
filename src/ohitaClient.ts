@@ -12,7 +12,10 @@ function getHeaders() {
 }
 
 export async function getThreatIntelFeed(): Promise<string> {
-    const keywords = ["CVE-2026-", "zero-day", "RCE exploit", "auth bypass vulnerability"];
+    const base = ["CVE-2026-", "zero-day", "RCE exploit", "auth bypass vulnerability"];
+    const custom = (process.env.WATCH_KEYWORDS || "")
+        .split(",").map(k => k.trim()).filter(Boolean);
+    const keywords = [...new Set([...base, ...custom])];
     let combinedFeed = "";
 
     // HackerNews
