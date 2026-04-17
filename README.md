@@ -4,7 +4,6 @@
 ![Node.js](https://img.shields.io/badge/Node.js-20+-339933?style=flat&logo=node.js&logoColor=white)
 ![Ohita](https://img.shields.io/badge/Ohita-8%20integrations-FF6B35?style=flat)
 ![License](https://img.shields.io/badge/license-MIT-green?style=flat)
-![Hackathon](https://img.shields.io/badge/Ohita%20Hackathon-2026-blueviolet?style=flat)
 
 **Autonomous zero-day vulnerability intelligence agent.** Monitors HackerNews, GitHub, StackExchange, Dev.to, Wikipedia, and more every 30 minutes — scores threats with a novel EPI algorithm — delivers structured Slack alerts before your team even wakes up.
 
