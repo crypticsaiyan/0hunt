@@ -177,17 +177,25 @@ export async function getCanonicalProductName(cveId: string): Promise<string> {
     }
 }
 
+async function fetchWikiExtract(title: string): Promise<string> {
+    const res = await fetch(
+        `${BASE_URL}/wikipedia/summary?title=${encodeURIComponent(title)}`,
+        { headers: getHeaders() }
+    );
+    const data: any = await res.json();
+    return data?.data?.extract || "";
+}
+
 export async function getSoftwareContext(software: string): Promise<string> {
     try {
-        const res = await fetch(
-            `${BASE_URL}/wikipedia/summary?title=${encodeURIComponent(software)}`,
-            { headers: getHeaders() }
-        );
-        const data: any = await res.json();
-        const extract = data?.data?.extract || "";
-        // First 2-3 sentences, capped at 300 chars
-        const sentences = extract.split(". ").slice(0, 3).join(". ");
-        return (sentences.length > 300 ? sentences.slice(0, 300) + "…" : sentences);
+        const candidates = [software, `${software} (software)`, `${software} (web browser)`, `${software} application`];
+        for (const title of candidates) {
+            const extract = await fetchWikiExtract(title);
+            if (!extract || extract.includes("may refer to:") || extract.startsWith("This article")) continue;
+            const sentences = extract.split(". ").slice(0, 3).join(". ");
+            return sentences.length > 300 ? sentences.slice(0, 300) + "…" : sentences;
+        }
+        return "";
     } catch (e: any) {
         console.error(`Wikipedia context error:`, e.message);
         return "";
